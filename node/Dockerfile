@@ -1,13 +1,17 @@
-FROM node:18
+FROM node:14
 
-RUN apt-get update && apt-get install -y wget && npm install -g npm@10.8.3
+ENV DOCKERIZE_VERSION v0.6.1
 
-ENV DOCKERIZE_VERSION v0.8.0
-RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-
-USER node
+RUN apt-get update \
+    && apt-get install -y wget \
+    && wget -O - "https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz" | tar xzf - -C /usr/local/bin \
+    && apt-get autoremove -yqq --purge wget && rm -rf /var/lib/apt/lists/* \
+    && npm install express --save && npm install mysql --save
 
 WORKDIR /usr/src/app
 
+COPY . .
+
+RUN npm install
+
+EXPOSE 3000

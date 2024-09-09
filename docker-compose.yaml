@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3'
 
 services:
   db:
@@ -8,36 +8,38 @@ services:
     restart: always
     tty: true
     volumes:
-      - ./node/.docker/mysql:/docker-entrypoint-initdb.d
+      - ./mysql:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       - MYSQL_DATABASE=nodedb
       - MYSQL_ROOT_PASSWORD=root
     networks:
       - node-network
 
-  app:
+  node:
     build:
-      context: ./node
-      dockerfile: Dockerfile
-    container_name: app
-    volumes:
-      - ./node:/usr/src/app
-    entrypoint: dockerize -wait tcp://db:3306 -timeout 50s sh -c "npm install && npm run start"
-    tty: true
-    depends_on:
-      - db
+      context: node
+    container_name: node
+    entrypoint: dockerize -wait tcp://db:3306 -timeout 50s docker-entrypoint.sh node index.js
     networks:
       - node-network
+    volumes:
+      - ./node:/usr/src/app
+    tty: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
 
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile
     container_name: nginx
+    restart: always
     ports:
       - '8080:80'
     depends_on:
-      - app
+      - node
     networks:
       - node-network
 
